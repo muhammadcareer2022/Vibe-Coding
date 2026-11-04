@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Database\Seeders\AdminUserSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class FilamentPanelAccessTest extends TestCase
@@ -43,5 +45,20 @@ class FilamentPanelAccessTest extends TestCase
 
         $response->assertForbidden();
     }
-}
 
+    public function test_super_admin_seeder_creates_valid_filament_admin(): void
+    {
+        $this->seed(AdminUserSeeder::class);
+
+        $superAdmin = User::where('email', 'admin@gmail.com')->first();
+
+        $this->assertNotNull($superAdmin);
+        $this->assertEquals('muhammad', $superAdmin->name);
+        $this->assertTrue(Hash::check('123456', $superAdmin->password));
+        $this->assertTrue($superAdmin->hasRole('admin'));
+
+        // Test Filament admin panel access
+        $response = $this->actingAs($superAdmin)->get('/admin');
+        $response->assertSuccessful();
+    }
+}
